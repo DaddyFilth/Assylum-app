@@ -1,16 +1,21 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.21 AS builder
 
 WORKDIR /app
 
-COPY backend/ ./backend/
+COPY backend/go.mod backend/go.sum ./backend/
 COPY frontend/ ./frontend/
 
 WORKDIR /app/backend
-RUN CGO_ENABLED=0 go build -mod=vendor -o server .
+RUN go mod download
 
-FROM alpine:latest
+COPY backend/ ./
 
-RUN apk --no-cache add ca-certificates
+ENV GOPROXY=https://proxy.golang.org,direct
+RUN CGO_ENABLED=0 go build -o server .
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
