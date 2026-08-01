@@ -17,7 +17,7 @@ func main() {
     mux.HandleFunc("/api/logout", logoutHandler)
     mux.HandleFunc("/api/session", sessionHandler)
 
-    fs := http.FileServer(http.Dir("../frontend"))
+    fs := http.FileServer(http.Dir("./frontend"))
     mux.Handle("/", fs)
 
     log.Println("Server running on http://localhost:8080")

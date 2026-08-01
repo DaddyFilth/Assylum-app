@@ -32,7 +32,7 @@ type PendingLogin struct {
 
 func initDB() {
     var err error
-    db, err = sql.Open("sqlite", "./data.db")
+    db, err = sql.Open("sqlite", "/app/data/data.db")
     if err != nil {
         panic(err)
     }

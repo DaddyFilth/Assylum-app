@@ -1,0 +1,6 @@
+backend/data.db
+backend/server
+.git
+*.md
+setup.sh
+fly.toml
