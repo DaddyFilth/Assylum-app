@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Assylum DeFi Aggregator</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0f; --card: #12121a; --border: #1e1e2e;
+            --text: #e2e8f0; --text-muted: #64748b;
+            --accent: #6366f1; --accent-hover: #818cf8;
+            --success: #22c55e; --warning: #facc15;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6;}
+        .container{max-width:1200px;margin:0 auto}
+        header{background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%); padding: 40px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 10px 40px rgba(99,102,241,0.3);}
+        h1{font-size: 36px; margin-bottom: 8px; font-weight: 700; letter-spacing: -0.5px}
+        h2{font-size: 16px; opacity: 0.9; font-weight: 400}
+        .updated{font-size: 13px; opacity: 0.8; margin-top: 12px; font-family: monospace}
+        
+        .auth-section { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .auth-status { font-size: 14px; color: var(--text-muted); }
+        .auth-status strong { color: var(--text); }
+        .auth-actions { display: flex; gap: 10px; }
+        .auth-actions input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 14px; width: 220px; }
+        .auth-actions input:focus { outline: none; border-color: var(--accent); }
+
+        .chains{display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; padding: 8px; background: var(--card); border-radius: 12px; border: 1px solid var(--border);}
+        .chain-btn{background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s;}
+        .chain-btn:hover{border-color: var(--accent); color: var(--accent)}
+        .chain-btn.active{background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(99,102,241,0.3)}
+        
+        .stats{display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px}
+        .stat{background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); transition: transform 0.2s}
+        .stat:hover{transform: translateY(-2px)}
+        .stat .label{color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px}
+        .stat .value{font-size: 28px; font-weight: 700; color: var(--accent)}
+        
+        .chart-container { position: relative; height: 400px; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; }
+        
+        .protocol-list{list-style: none; padding: 0}
+        .protocol-item{background: var(--card); padding: 20px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: all 0.2s;}
+        .protocol-item:hover{border-color: var(--accent); box-shadow: 0 4px 20px rgba(99,102,241,0.15)}
+        .protocol-info h3{color: var(--accent); margin-bottom: 4px; font-size: 18px}
+        .protocol-info .category{color: var(--text-muted); font-size: 13px; margin-bottom: 4px}
+        .protocol-info .tvl{font-size: 13px; color: var(--text-muted)}
+        .protocol-apy{font-size: 26px; font-weight: 700; color: var(--success); margin-bottom: 8px}
+        
+        .btn{background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s;}
+        .btn:hover{background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.3)}
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-secondary:hover { border-color: var(--text-muted); box-shadow: none; }
+        
+        .loading{text-align: center; padding: 60px; color: var(--text-muted); font-size: 15px}
+        .loading::after{content: '...'; animation: dots 1.5s infinite}
+        @keyframes dots{0%, 20%{content: '.'} 40%{content: '..'} 60%, 100%{content: '...'}}
+        
+        .analytics{margin-top: 24px; padding: 20px; background: var(--card); border-radius: 12px; border: 1px solid var(--border)}
+        .analytics h3{color: var(--accent); margin-bottom: 8px; font-size: 16px}
+        .analytics p{color: var(--text-muted); font-size: 14px}
+        
+        .email-capture{background: linear-gradient(135deg, #7c3aed 0%, var(--accent) 100%); padding: 30px; border-radius: 16px; margin: 24px 0; text-align: center; box-shadow: 0 10px 40px rgba(124,58,237,0.3);}
+        .email-capture h3{color: white; margin-bottom: 8px; font-size: 22px}
+        .email-capture p{color: rgba(255,255,255,0.8); font-size: 14px; margin-bottom: 20px}
+        .email-form{display: flex; gap: 10px; max-width: 400px; margin: 0 auto}
+        .email-form input{flex: 1; padding: 12px 16px; border: none; border-radius: 8px; font-size: 14px}
+        .email-form button{background: white; color: var(--accent); border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s}
+        .email-form button:hover{transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2)}
+        .form-success{background: var(--success); color: white; padding: 12px; border-radius: 8px; margin-top: 16px; display: none; font-size: 14px}
+        
+        .affiliate-footer{margin-top: 40px; padding: 20px; text-align: center; border-top: 1px solid var(--border)}
+        .affiliate-footer p{color: var(--text-muted); font-size: 13px; margin-bottom: 12px}
+        .affiliate-links{display: flex; gap: 12px; justify-content: center; flex-wrap: wrap}
+        .affiliate-links a{color: var(--accent); text-decoration: none; font-size: 13px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; transition: all 0.2s;}
+        .affiliate-links a:hover{border-color: var(--accent); background: rgba(99,102,241,0.1)}
+        
+        @media (max-width: 640px){ h1{font-size: 28px} .email-form{flex-direction: column} .protocol-item{flex-direction: column; align-items: flex-start} .chart-container{height: 300px} .auth-section { flex-direction: column; align-items: stretch; } .auth-actions { flex-direction: column; } .auth-actions input { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Assylum DeFi Aggregator</h1>
+            <h2>Best yields across every major network</h2>
+            <div class="updated" id="lastUpdated">Loading...</div>
+        </header>
+
+        <div class="auth-section">
+            <div class="auth-status" id="authStatus">Sign in to save your preferences</div>
+            <div class="auth-actions" id="authActions">
+                <input type="email" id="authEmail" placeholder="Enter your email">
+                <button class="btn" id="registerBtn">Register</button>
+                <button class="btn btn-secondary" id="loginBtn">Sign In</button>
+            </div>
+        </div>
+
+        <div class="chains">
+            <button class="chain-btn active" data-chain="Ethereum">Ethereum</button>
+            <button class="chain-btn" data-chain="Arbitrum">Arbitrum</button>
+            <button class="chain-btn" data-chain="Base">Base</button>
+            <button class="chain-btn" data-chain="Solana">Solana</button>
+            <button class="chain-btn" data-chain="BSC">BSC</button>
+            <button class="chain-btn" data-chain="OP Mainnet">OP Mainnet</button>
+            <button class="chain-btn" data-chain="Polygon">Polygon</button>
+            <button class="chain-btn" data-chain="Avalanche">Avalanche</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="label">Protocols</div><div class="value" id="total">0</div></div>
+            <div class="stat"><div class="label">Best APY</div><div class="value" id="bestApy">0%</div></div>
+            <div class="stat"><div class="label">Your Clicks</div><div class="value" id="clicks">0</div></div>
+            <div class="stat"><div class="label">Chain TVL</div><div class="value" id="totalTvl">$0</div></div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="apyChart"></canvas>
+        </div>
+
+        <div class="loading" id="loading">Loading protocols</div>
+        <ul class="protocol-list" id="protocolList"></ul>
+
+        <div class="email-capture">
+            <h3>Get Yield Alerts</h3>
+            <p>Be first to know when APYs spike on your favorite protocols</p>
+            <form name="yield-alerts" method="POST" data-netlify="true" class="email-form" id="emailForm">
+                <input type="email" name="email" placeholder="Enter your email" required>
+                <button type="submit">Subscribe</button>
+            </form>
+            <div class="form-success" id="formSuccess">Thanks! You're on the list.</div>
+        </div>
+
+        <div class="analytics">
+            <h3>Your Analytics</h3>
+            <p>Total deposits referred: <span id="analyticsClicks">0</span></p>
+        </div>
+
+        <div class="affiliate-footer">
+            <p>Ready to start? Buy crypto through our partners:</p>
+            <div class="affiliate-links" id="affiliateLinks"></div>
+        </div>
+    </div>
+
+    <script src="affiliates.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

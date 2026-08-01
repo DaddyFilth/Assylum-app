@@ -1,0 +1,16 @@
+# Exported from Render on 2026-08-01T17:24:46Z
+version: "1"
+projects:
+- name: Assylum-app
+  environments:
+  - name: Production
+    services:
+    - type: web
+      name: Assylum-app
+      runtime: docker
+      repo: https://github.com/DaddyFilth/Assylum-app
+      plan: free
+      region: oregon
+      dockerContext: .
+      dockerfilePath: ./Dockerfile
+      autoDeployTrigger: commit
